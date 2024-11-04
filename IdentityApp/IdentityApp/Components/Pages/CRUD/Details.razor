@@ -1,0 +1,50 @@
+﻿@page "/CRUD/details"
+@using Microsoft.EntityFrameworkCore
+@using IdentityApp.Models
+@inject IDbContextFactory<IdentityApp.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>TodoItem</h2>
+    <hr />
+    @if (todoitem is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Task</dt>
+            <dd class="col-sm-10">@todoitem.Task</dd>
+            <dt class="col-sm-2">Complete</dt>
+            <dd class="col-sm-10">@todoitem.Complete</dd>
+            <dt class="col-sm-2">Owner</dt>
+            <dd class="col-sm-10">@todoitem.Owner</dd>
+        </dl>
+        <div>
+            <a href="@($"/todoitems/edit?id={todoitem.Id}")">Edit</a> |
+            <a href="@($"/todoitems")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private TodoItem? todoitem;
+
+    [SupplyParameterFromQuery]
+    private long Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        todoitem = await context.TodoItems.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (todoitem is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

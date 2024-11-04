@@ -1,0 +1,54 @@
+﻿@page "/CRUD/create"
+@using Microsoft.EntityFrameworkCore
+@using IdentityApp.Models
+@inject IDbContextFactory<IdentityApp.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>TodoItem</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="TodoItem" OnValidSubmit="AddTodoItem" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            <div class="mb-3">
+                <label for="task" class="form-label">Task:</label> 
+                <InputText id="task" @bind-Value="TodoItem.Task" class="form-control" /> 
+                <ValidationMessage For="() => TodoItem.Task" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="complete" class="form-label">Complete:</label> 
+                <InputCheckbox id="complete" @bind-Value="TodoItem.Complete" class="form-check-input" /> 
+                <ValidationMessage For="() => TodoItem.Complete" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="owner" class="form-label">Owner:</label> 
+                <InputText id="owner" @bind-Value="TodoItem.Owner" class="form-control" /> 
+                <ValidationMessage For="() => TodoItem.Owner" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/todoitems">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private TodoItem TodoItem { get; set; } = new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddTodoItem()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.TodoItems.Add(TodoItem);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/todoitems");
+    }
+}

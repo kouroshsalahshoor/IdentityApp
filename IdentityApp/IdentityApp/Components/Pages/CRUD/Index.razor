@@ -1,0 +1,38 @@
+﻿@page "/CRUD/index"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using IdentityApp.Models
+@using IdentityApp.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<IdentityApp.Data.ApplicationDbContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="todoitems/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.TodoItems">
+    <PropertyColumn Property="todoitem => todoitem.Task" />
+    <PropertyColumn Property="todoitem => todoitem.Complete" />
+    <PropertyColumn Property="todoitem => todoitem.Owner" />
+
+    <TemplateColumn Context="todoitem">
+        <a href="@($"todoitems/edit?id={todoitem.Id}")">Edit</a> |
+        <a href="@($"todoitems/details?id={todoitem.Id}")">Details</a> |
+        <a href="@($"todoitems/delete?id={todoitem.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private ApplicationDbContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

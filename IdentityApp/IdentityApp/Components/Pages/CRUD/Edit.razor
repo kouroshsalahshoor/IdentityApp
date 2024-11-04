@@ -1,0 +1,99 @@
+﻿@page "/CRUD/edit"
+@using Microsoft.EntityFrameworkCore
+@using IdentityApp.Models
+@inject IDbContextFactory<IdentityApp.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>TodoItem</h2>
+<hr />
+@if (TodoItem is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="TodoItem" OnValidSubmit="UpdateTodoItem" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <input type="hidden" name="TodoItem.Id" value="@TodoItem.Id" />
+                <div class="mb-3">
+                    <label for="task" class="form-label">Task:</label>
+                    <InputText id="task" @bind-Value="TodoItem.Task" class="form-control" />
+                    <ValidationMessage For="() => TodoItem.Task" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="complete" class="form-label">Complete:</label>
+                    <InputCheckbox id="complete" @bind-Value="TodoItem.Complete" class="form-check-input" />
+                    <ValidationMessage For="() => TodoItem.Complete" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="owner" class="form-label">Owner:</label>
+                    <InputText id="owner" @bind-Value="TodoItem.Owner" class="form-control" />
+                    <ValidationMessage For="() => TodoItem.Owner" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/todoitems">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private long Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private TodoItem? TodoItem { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        TodoItem ??= await context.TodoItems.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (TodoItem is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateTodoItem()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(TodoItem!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!TodoItemExists(TodoItem!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/todoitems");
+    }
+
+    private bool TodoItemExists(long id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.TodoItems.Any(e => e.Id == id);
+    }
+}

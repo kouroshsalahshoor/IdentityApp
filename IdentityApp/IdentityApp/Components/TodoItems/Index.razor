@@ -1,0 +1,140 @@
+﻿@page "/todoitems"
+@rendermode InteractiveServer
+
+<PageTitle>@_title</PageTitle>
+
+<h1>@_title</h1>
+
+@if (string.IsNullOrEmpty(_error) == false)
+{
+    <div class="alert alert-danger" role="alert">
+        @_error
+    </div>
+}
+
+<h2 class="text-center">To Do List</h2>
+@* <h4 class="text-center">(@User.Identity.Name)</h4> *@
+
+<div class="m-2">
+    <div class="form-check">
+        <input type="checkbox" class="form-check-input" @onclick="toggleShowComplete" />
+        <label class="form-check-label">Show Completed Items</label>
+    </div>
+</div>
+
+<table class="table table-sm table-striped table-bordered m-2">
+    <thead><tr><th>Task</th><th /></tr></thead>
+    <tbody>
+        @if (_items is null)
+        {
+            <tr>
+                <td colspan="2" class="text-center py-4">
+                    No tasks!
+                </td>
+            </tr>
+        }
+        else if (_items.Count() == 0)
+        {
+            <tr>
+                <td colspan="2" class="text-center py-4">
+                    No competed tasks
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in _items)
+            {
+                <tr>
+                    <td class="p-2">@item.Task</td>
+                    <td class="text-center py-2">
+                        <div>
+                            <button class="btn btn-sm btn-primary" @onclick="async () => await toggleComplete(item.Id)">
+                                @(item.Complete ? "Mark Not Done" : "Done")
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td class="pt-4">
+                <div>
+                    <InputText name="task" placeholder="Enter new to do" class="form-control" @bind-Value="_newTask.Task" />
+                </div>
+            </td>
+            <td class="text-center pt-4">
+                <button class="btn btn-sm btn-primary" @onclick="save">
+                    Add
+                </button>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+@code {
+    [Inject] public ApplicationDbContext _db { get; set; }
+
+    private string _title = "Todo Items";
+    private bool _showComplete = false;
+    private IEnumerable<TodoItem>? _items;
+    private TodoItem _newTask = new();
+    private string _error = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await load();
+    }
+
+    private async Task load()
+    {
+        _newTask = new();
+
+        _items = _db.TodoItems.Where(x => x.Complete == _showComplete).OrderBy(x => x.Task).ToList();
+    }
+
+    private async Task toggleShowComplete()
+    {
+        _showComplete = !_showComplete;
+        await load();
+    }
+
+    private async Task toggleComplete(long id)
+    {
+        var item = await _db.TodoItems.FirstOrDefaultAsync(x => x.Id == id);
+        if (item is null)
+        {
+            _error = "Error toggling complete!";
+        }
+        else
+        {
+            item.Complete = !item.Complete;
+            _db.TodoItems.Update(item);
+            await _db.SaveChangesAsync();
+
+            await load();
+        }
+
+    }
+
+    private async Task save()
+    {
+        try
+        {
+            // using var context = _dbFactory.CreateDbContext();
+            _newTask.Owner = "xxx";
+            _db.TodoItems.Add(_newTask);
+            await _db.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            _error = "Error saving Item: " + e.InnerException;
+        }
+        finally
+        {
+            await load();
+        }
+    }
+}
